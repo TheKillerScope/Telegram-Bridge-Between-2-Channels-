@@ -1,272 +1,138 @@
 # Telegram Channel Bridge
 
-A reliable Python script that automatically forwards messages from a paid/restricted Telegram channel to your own channel using the Telegram API.
+Automatically forwards messages from a paid/restricted Telegram channel to your own channel.
 
-## 🚀 Features
+## What You Need
 
-- **No Bot Required**: Uses your user account via MTProto API
-- **Handles Restricted Channels**: Works with channels where bots can't be added
-- **Reliable Forwarding**: Forwards text, media, and all message types with original formatting
-- **Tmux Session**: Persistent background execution with easy monitoring
-- **Error Handling**: Robust handling of Telegram API errors and rate limits
-- **Logging**: Comprehensive logging with timestamp filtering
-
-## 📋 Prerequisites
-
-- Linux server Ubuntu/Debian recommended (I ran it using Ubuntu 22.04)
+- Linux server (Ubuntu/Debian)
 - Python 3.7+
-- tmux
 - Active Telegram account
+- Admin access to destination channel
 
-## 🔧 Step-by-Step Setup
+## Setup Guide
 
-### Step 1: Get Telegram API Credentials
+### 1. Get Telegram API Keys
 
-1. **Visit**: https://my.telegram.org/auth
-2. **Login** with your phone number
-3. **Go to API Development Tools**: https://my.telegram.org/apps
-4. **Create a new application**:
+1. Go to https://my.telegram.org/auth
+2. Login with your phone number
+3. Click "API Development Tools" 
+4. Fill out the form:
    - App title: `Channel Bridge`
    - Short name: `bridge`
    - Platform: `Desktop`
-5. **Save your credentials**:
-   - `API_ID`: 8-digit number
-   - `API_HASH`: 32-character string
+5. Copy your `API_ID` (8 digits) and `API_HASH` (32 characters)
 
-### Step 2: Get Channel IDs
+### 2. Find Channel IDs
 
-#### Method 1: Using Telegram Web
-1. **Open**: https://web.telegram.org
-2. **Navigate to your channels**
-3. **Look at URL**: `https://web.telegram.org/k/#-1001234567890`
-4. **The ID is the number after `#`**: `-1001234567890`
+**Method 1 - Telegram Web:**
+1. Open https://web.telegram.org
+2. Go to your source channel (paid channel)
+3. Copy the number from URL: `https://web.telegram.org/k/#-1001234567890`
+4. The ID is `-1001234567890`
+5. Go to your own channel (destination channel)  #Obviously you have to create it, if not already done so
+6. Copy the number from URL: `https://web.telegram.org/k/#-1009876543210`
+7. The ID is `-1009876543210`
 
-#### Method 2: Using Bot
-1. **Add @userinfobot to channels** (if possible, if not then use the method above)
-2. **Forward any message to @userinfobot**
-3. **It will show the channel ID**
+**Method 2 - Bot:**
+1. Add @userinfobot to both channels
+2. Forward any message to the bot
+3. It shows the channel ID
 
-### Step 3: Install Dependencies
+### 3. Install Dependencies
 
 ```bash
-# Update system
+# Download files from GitHub
+git clone https://github.com/KillerScrope/telegram-bridge.git
+cd telegram-bridge
+
+# Install dependencies
 sudo apt update
-
-# Install requirements
 sudo apt install -y python3 python3-pip tmux
-
-# Install Telethon
 pip3 install telethon
-```
 
-### Step 4: Setup Project
-
-```bash
-# Create project directory
-mkdir -p ~/tg-bridge
-cd ~/tg-bridge
-
-# Download/create files (copy from GitHub artifacts)
-# - bridge.py
-# - generate_session.py  
-# - config.py
-
-# Make scripts executable
+# Make scripts runnable
 chmod +x *.py
-```
+4. Configure Settings
+Edit the config file:
+bashnano config.py
+Replace the example values:
+pythonAPI_ID = 12345678  # Your API ID from step 1
+API_HASH = 'abc123...'  # Your API Hash from step 1
+SOURCE_CHAT_ID = -1001234567890  # Source channel ID from step 2
+DEST_CHAT_ID = -1009876543210    # Destination channel ID from step 2
+5. Get Session String
+Run the session generator:
+bashpython3 generate_session.py
+Follow the prompts:
 
-### Step 5: Configure
+Enter phone number with country code (+1234567890)
+Enter verification code from Telegram
+Enter 2FA password if you have one
+Copy the long session string that appears
 
-```bash
-# Edit configuration
-nano config.py
-```
-
-**Update values:**
-```python
-API_ID = 12345678  # Your API ID
-API_HASH = 'your_api_hash_here'  # Your API Hash
-SOURCE_CHAT_ID = -1001234567890  # Source channel ID
-DEST_CHAT_ID = -1001234567891    # Destination channel ID
-```
-
-### Step 6: Generate Session String
-
-```bash
-cd ~/tg-bridge
-python3 generate_session.py
-```
-
-**Follow prompts:**
-1. Enter phone number (with country code)
-2. If 2FA enabled enter verification code
-3. Enter password
-4. **Copy the session string**
-
-### Step 7: Start Bridge in Tmux
-
-```bash
-# Start tmux session
+6. Start the Bridge
+bash# Create tmux session
 tmux new-session -d -s telegram-bridge
 
-# Set session string and run bridge
-tmux send-keys -t telegram-bridge "cd ~/tg-bridge" Enter
-tmux send-keys -t telegram-bridge "export TG_STRING_SESSION='YOUR_SESSION_STRING_HERE'" Enter
+# Run the bridge (replace YOUR_SESSION_STRING with your actual string)
+tmux send-keys -t telegram-bridge "cd ~/telegram-bridge" Enter
+tmux send-keys -t telegram-bridge "export TG_STRING_SESSION='YOUR_SESSION_STRING'" Enter
 tmux send-keys -t telegram-bridge "python3 bridge.py" Enter
 
-# Attach to view logs
+# View the bridge running
 tmux attach -t telegram-bridge
-```
-
-**Expected output:**
-```
+You should see:
 ✅ Client started successfully
-✅ Source channel: [Channel Name]
-✅ Destination channel: [Channel Name]
+✅ Source channel: [Your Channel Name]
+✅ Destination channel: [Your Channel Name]
 ✅ Test message sent successfully
 🚀 Bridge is live and listening for messages...
-```
+Press Ctrl+B then D to detach and leave it running.
+Daily Usage
+Check if running:
+bashtmux list-sessions
+View logs:
+bashtmux attach -t telegram-bridge
+Restart bridge:
+bashtmux kill-session -t telegram-bridge
+# Then repeat step 6
+Stop bridge:
+bashtmux kill-session -t telegram-bridge
+Auto-Start on Reboot
+Add to startup:
+bashcrontab -e
+Add this line:
+bash@reboot tmux new-session -d -s telegram-bridge && tmux send-keys -t telegram-bridge "cd ~/telegram-bridge && export TG_STRING_SESSION='YOUR_SESSION_STRING' && python3 bridge.py" Enter
+Troubleshooting
+"No module named 'telethon'"
+bashpip3 install telethon
+"No permission to write"
 
-**To detach**: Press `Ctrl+B`, then `D`
+Make sure you're admin of destination channel
+Check channel allows posting
 
-### Step 8: Verify Operation
+Bridge stops working
 
-Check your destination channel for the test message: "🤖 Bridge started at [timestamp]"
+Check tmux session: tmux attach -t telegram-bridge
+Restart if needed: tmux kill-session -t telegram-bridge
 
-## 🔧 Management Commands
-
-### View Bridge Status
-```bash
-# Attach to tmux session
-tmux attach -t telegram-bridge
-
-# List tmux sessions
-tmux list-sessions
-```
-
-### Restart Bridge
-```bash
-# Kill session
-tmux kill-session -t telegram-bridge
-
-# Start new session
-tmux new-session -d -s telegram-bridge
-tmux send-keys -t telegram-bridge "cd ~/tg-bridge" Enter
-tmux send-keys -t telegram-bridge "export TG_STRING_SESSION='YOUR_SESSION_STRING_HERE'" Enter
-tmux send-keys -t telegram-bridge "python3 bridge.py" Enter
-```
-
-### Stop Bridge
-```bash
-tmux kill-session -t telegram-bridge
-```
-
-### Auto-start on Boot (Optional)
-
-Add to crontab:
-```bash
-crontab -e
-```
-
-Add line:
-```bash
-@reboot tmux new-session -d -s telegram-bridge && tmux send-keys -t telegram-bridge "cd ~/tg-bridge && export TG_STRING_SESSION='YOUR_SESSION_STRING_HERE' && python3 bridge.py" Enter
-```
-
-## 🔧 Alternative: Systemd Service (Advanced Users)
-
-If you prefer systemd over tmux:
-
-```bash
-# Copy service file to systemd
-sudo cp tg-bridge.service /etc/systemd/system/
-sudo nano /etc/systemd/system/tg-bridge.service
-
-# Update session string in service file
-# Then start service
-sudo systemctl daemon-reload
+Timestamp warnings
+These are harmless and don't affect functionality.
+Advanced: Systemd Service
+For automatic management, copy tg-bridge.service to /etc/systemd/system/, edit the session string, then:
+bashsudo systemctl daemon-reload
 sudo systemctl enable tg-bridge
 sudo systemctl start tg-bridge
+Security
 
-# Monitor
-sudo journalctl -u tg-bridge -f
-```
+Never share your session string
+Use a dedicated Telegram account if possible
+Keep your API credentials private
 
-## 🛠️ Troubleshooting
+Files
 
-### Common Issues
-
-#### 1. "ModuleNotFoundError: No module named 'telethon'"
-```bash
-pip3 install telethon
-```
-
-#### 2. Tmux session not found
-```bash
-# Check existing sessions
-tmux list-sessions
-
-# Create new session if needed
-tmux new-session -d -s telegram-bridge
-```
-
-#### 3. "PersistentTimestampOutdatedError"
-This is a harmless Telegram API warning. The bridge continues working normally.
-
-#### 4. "No permission to write to destination channel"
-- Ensure you're an admin of the destination channel
-- Verify correct channel ID
-- Check channel allows posting
-
-#### 5. Bridge stops unexpectedly
-```bash
-# Check tmux session
-tmux attach -t telegram-bridge
-
-# Test manually
-export TG_STRING_SESSION='your_session_string'
-python3 bridge.py
-```
-
-#### 6. Messages not preserving formatting
-The bridge uses direct forwarding to preserve original formatting and embeds.
-
-### Clear Old Logs
-```bash
-# Restart tmux session to clear logs
-tmux kill-session -t telegram-bridge
-# Then start new session
-```
-
-### Regenerate Session String
-```bash
-cd ~/tg-bridge
-python3 generate_session.py
-# Update session string in your tmux commands
-```
-
-## 📁 File Structure
-
-```
-tg-bridge/
-├── README.md              # This guide
-├── bridge.py             # Main bridge script
-├── generate_session.py   # Session string generator
-├── config.py             # Configuration file
-└── tg-bridge.service     # Systemd service (optional)
-```
-
-## 🔒 Security Notes
-
-- **Keep session string secure** - provides full Telegram account access
-- **Don't share session string**
-- **Use dedicated Telegram account** if possible
-- **Monitor logs regularly**
-
-## 📄 License
-
-Provided as-is for educational purposes. Use responsibly and comply with Telegram's Terms of Service.
-
-## ⚠️ Disclaimer
-
-For personal use only. Ensure compliance with Telegram's Terms of Service and applicable laws.
+bridge.py - Main script
+config.py - Your settings
+generate_session.py - Creates session string
+setup.sh - Auto installer (optional)
+tg-bridge.service - Systemd service (optional)
