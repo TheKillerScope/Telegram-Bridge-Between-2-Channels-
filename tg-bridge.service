@@ -1,0 +1,30 @@
+[Unit]
+Description=Telegram Channel Bridge
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /root/tg-bridge/bridge.py
+Environment=TG_STRING_SESSION=YOUR_SESSION_STRING_HERE  #Replace YOUR_SESSION_STRING_HERE with the actual string
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONWARNINGS=ignore::UserWarning
+
+# Restart configuration
+Restart=always
+RestartSec=10
+
+# Resource limits
+LimitNOFILE=1024
+MemoryMax=512M
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tg-bridge
+
+[Install]
+WantedBy=multi-user.target
